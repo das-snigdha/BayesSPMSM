@@ -122,7 +122,7 @@ void update_b(NumericMatrix mu_mtx, NumericMatrix Sigma_b, NumericVector sigma_s
 }
 
 // [[Rcpp::export]]
-List CS_MCMC
+List GP_MSM
 (IntegerVector id, IntegerVector tooth, NumericVector C, IntegerVector State, NumericMatrix X,
  NumericVector u, NumericMatrix S_Omega, int c_Omega, 
  NumericVector init_xi, NumericVector init_beta, NumericVector init_alpha,
@@ -369,7 +369,7 @@ List CS_MCMC
 
 
 // [[Rcpp::export]]
-List CS_MCMC_BP
+List BP_MSM
 (IntegerVector id, IntegerVector tooth, NumericVector C, IntegerVector State, NumericMatrix X,
  NumericMatrix S_Omega, int c_Omega,
  NumericVector init_psi, NumericVector init_beta, NumericVector init_alpha,
