@@ -78,10 +78,10 @@ take $p = 3$ with two subject level covariates (one binary and one
 continuous) and one tooth level covariate indicating whether a tooth is
 present in the upper or lower jaw.
 
-- True regression parameter : \$= / \| \| \$ with \$=(-1, 1, -1) \$.
+- True regression parameter : $\beta = (-1, 1, -1) / \sqrt{3}$.
 
 - True monotone link function :
-  $g(x) = c \cdot \left\{ \Phi \left( \frac{(x+1)/2 \ - \ 0.5}{0.2}\right) - \Phi \left( { - \ 0.5}/{0.2}\right) \right\}$,
+  $g(x) = c \cdot \{ \Phi ( \frac{(x+1)/2 \ - \ 0.5}{0.2}) - \Phi ( { - \ 0.5}/{0.2}) \}$,
   $x \in [-1,1]$, where $c$ is a constant chosen in such a way that the
   signal-to-noise ratio (SNR) is fixed at $5$. Here, $\Phi$ denotes the
   CDF of a standard normal distribution.
