@@ -68,3 +68,34 @@ using elliptical slice sampling and fast circulant embedding techniques.
 
 - **RcppBasic.h** - Functions to basic vector and matrix operations in
   Rcpp.
+
+## Example
+
+We consider a sample of $n = 100$ subjects, $m = 10$ teeth for each
+subject, and disease states $0, 1, \ldots, K$ with $K = 3$ for each
+teeth. Each subject has a $p$-dimensional vector of covariates. Here, we
+take $p = 3$ with two subject level covariates (one binary and one
+continuous) and one tooth level covariate indicating whether a tooth is
+present in the upper or lower jaw.
+
+- True regression parameter : \$= / \| \| \$ with \$=(-1, 1, -1) \$.
+
+- True monotone link function :
+  $g(x) = c \cdot \left\{ \Phi \left( \frac{(x+1)/2 \ - \ 0.5}{0.2}\right) - \Phi \left( { - \ 0.5}/{0.2}\right) \right\}$,
+  $x \in [-1,1]$, where $c$ is a constant chosen in such a way that the
+  signal-to-noise ratio (SNR) is fixed at $5$. Here, $\Phi$ denotes the
+  CDF of a standard normal distribution.
+
+- Random effects : generated from $\mathcal{N} (0, \Sigma_b)$,
+  $\Sigma_b = (0.1)^2 (E_W - 0.9W)^{-1}$, where $W$ and $E_W$
+  respectively denote the adjacency matrix and a diagonal matrix with
+  the $j$th diagonal entry representing the number of neighbors at
+  location $j$ of a graph connecting neighbouring teeth.
+
+- Random errors : generated from a mixture of Gaussians,
+  $(1/3) \mathcal{N}(-0.5, 0.1^2) + (1/3) \mathcal{N}(0, 0.1^2) + (1/3) \mathcal{N}(0.5, 0.1^2)$.
+
+- True time to each disease state is generated after generating the
+  relative disease increment times from a Dirichlet ($3,4,2$)
+  distribution and the random inspection times from a Gamma ($1, 0.2$)
+  distribution.
