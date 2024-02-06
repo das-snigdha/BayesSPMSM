@@ -50,3 +50,12 @@ GP_MSM = function(id, tooth, C, State, X, sigma.sq.beta, S.Omega, c.Omega,
   
   return(out)
 }
+
+# get the estimated link function corresponding to posterior samples of basis coefficients
+g.est = function(xi.mtx, x, u){
+  res = matrix(0, nrow=nrow(xi.mtx), ncol=length(x))
+  for(i in 1:nrow(res))
+    for(j in 1:ncol(res))
+      res[i,j] = g(x[j], xi.mtx[i,], u)
+  return(res)
+}
