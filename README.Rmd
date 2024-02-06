@@ -42,7 +42,7 @@ We propose a Bayesian semiparametric accelerated failure time model with (spatia
 
 ## Example
 
-We consider a sample of $n = 100$ subjects, $m = 10$ teeth for each subject, and disease states $0, 1, \ldots, K$ with $K = 3$ for each teeth. Each subject has a $p$-dimensional vector of covariates. Here, we take $p = 3$ with two subject level covariates (one binary and one continuous) and one tooth level covariate indicating whether a tooth is present in the upper or lower jaw.
+We consider a sample of $n = 100$ subjects, $m = 10$ teeth for each subject, and disease states $0, 1, \ldots, K$ with $K = 3$ for each teeth. Each subject has a $p$-dimensional vector of covariates. Here, we take $p = 5$ with two subject level covariates (one binary and one continuous) and one tooth level covariate indicating whether a tooth is present in the upper or lower jaw.
 
 -   True regression parameter : $\beta = (-1, 1, -1) / \sqrt{3}$. 
 
@@ -55,7 +55,7 @@ We consider a sample of $n = 100$ subjects, $m = 10$ teeth for each subject, and
 -   True time to each disease state is generated after generating the relative disease increment times from a Dirichlet ($3,4,2$) distribution and the random inspection times from a Gamma ($1, 0.2$) distribution.
 
 **Data generation** :
-```{r, message = FALSE, warning = FALSE, eval = FALSE}
+```{r, message = FALSE, warning = FALSE}
 library(tidyverse); library(ggpubr)
 source("SPMSM.R")
 
@@ -63,7 +63,7 @@ set.seed(2024)
 n = 100; m = 10; p = 3 ; N = n*m ; K = 3
 
 # true regression parameter
-tmp = c(-1, 1, -1); true.beta=tmp/norm(tmp,"2")
+tmp = c(-1, 1, -1) ; true.beta = tmp/norm(tmp,"2")
 
 # true link function
 true.g = function(x, a = 1){
@@ -80,9 +80,9 @@ mu_eps = c(-0.5, 0, 0.5)
 # parameters for generating the random inspection times
 C.param = c(1, 0.2)
 
-# generate the data
-data_all = data_model(n = n, m = m, p = p, true.alpha = true.alpha, true.beta = true.beta, 
-                      mu_eps = mu_eps, C.param = C.param)
+# generate the data by setting SNR = 5
+data_all = data_model(n = n, m = m, p = p, snr = 5, true.alpha = true.alpha, 
+                      true.beta = true.beta, mu_eps = mu_eps, C.param = C.param)
 obs.full = data_all$obs.full
 const.g = data_all$const.g
 
@@ -90,10 +90,10 @@ const.g = data_all$const.g
 
 Specify hyperparameters :
 
-```{r, message = FALSE, warning = FALSE, eval = FALSE}
+```{r, message = FALSE, warning = FALSE}
 # Coefficients of the constrained GP basis functions. 
-# We use 20 basis functions on equidistant knot points in [-1,1] for illustration.
-L = 20 ; u = seq(-1, 1, length = L+1)
+# We use 30 basis functions on equidistant knot points in [-1,1] for illustration.
+L = 30 ; u = seq(-1, 1, length = L+1)
 a.xi = 0.01 ; b.xi = 0.01 ; eta.xi = 100 ;
 # smoothness and length-scale parameters of the Matern covariance Kernel
 nu.matern = 0.75 ; l.matern = l_est(nu.matern, c(u[1], u[length(u)]), 0.05)
@@ -114,38 +114,27 @@ S.Omega = solve(tmp) ; c.Omega = m/2 + 2
 # DP mixture of Gaussians for the error density
 f.mu = 0; f.nu = 1; f.lambda = 0.1; f.alpha = 2.001; 
 # level of truncation for running the blocked Gibbs sampler for DP
-L.max = 10
+L.max = 5
 
 # Number of MCMC samples, burn-in period and thinning interval.
-M = 1000; M.burn = 1000 
+M = 5000; M.burn = 1000; M.thin = 5
 ```
 
 **Simulate posterior samples using a Gibbs sampling algorithm** :
 
-```{r, results='hide', eval = FALSE}
+```{r, results='hide'}
 # run the Gibbs sampler to get posterior samples
-out = GP_MSM(id = obs.full[,"id"], tooth = obs.full[,"tooth"], C  = obs.full[,"C"], 
-             State = obs.full[,"State"], X = obs.full[, paste0("x", 1:p)], 
+out = GP_MSM(id = obs.full[ , "id"], tooth = obs.full[ , "tooth"], C  = obs.full[ , "C"], 
+             State = obs.full[ , "State"], X = obs.full[ , paste0("x", 1:p)], 
              sigma.sq.beta = sigma.sq.beta, S.Omega = S.Omega, c.Omega = c.Omega,
              u = u, l.matern = l.matern, nu.matern = nu.matern, eta.xi = eta.xi, 
              a.xi = a.xi, b.xi = b.xi, L = L, 
              alpha.a = alpha.a, alpha.lambda = alpha.lambda, alpha.tune = alpha.tune, 
              f.mu = f.mu, f.nu = f.nu, f.lambda = f.lambda, f.alpha = f.alpha, L.max = L.max, 
-             M = M, M.burn = M.burn)
-```
-Posterior estimate of regression parameters : 
-
-```{r, message = FALSE, warning = FALSE, eval = FALSE}
-# Posterior mean of beta
-sam.beta = out$beta
-hat.beta = colMeans(out$beta)
-hat.beta = hat.beta / norm(hat.beta, "2")
-
-# 95% credible interval of beta
-CI.beta = apply(sam.beta, 2, quantile, probs=c(0.025,0.975))
+             M = M, M.burn = M.burn, M.thin = M.thin)
 ```
 
-```{r, include=FALSE, eval = FALSE}
+```{r, include=FALSE}
 themegg = theme(
   # LABLES APPEARANCE
   panel.grid.major = element_blank(), 
@@ -167,5 +156,64 @@ themegg = theme(
 )
 ```
 
-Plot showing the true and estimated regression parameter along with its $95\%$ credible interval :
+Posterior estimate of regression parameters : 
+```{r, message = FALSE, warning = FALSE}
+# Posterior mean of beta
+sam.beta = out$beta
+hat.beta = colMeans(out$beta)
+hat.beta = hat.beta / norm(hat.beta, "2")
 
+# 95% credible interval of beta
+CI.beta = apply(sam.beta, 2, quantile, probs=c(0.025,0.975))
+```
+
+Plot showing the true and estimated regression parameter along with the $95 \%$ credible intervals :
+```{r, message = FALSE, warning = FALSE}
+# data frame for plotting the posterior estimates of beta
+df_beta = data.frame(x = paste0("x", 1:p), beta = c(true.beta, hat.beta),
+                     type = rep(c("true", "estimated"), each = p),
+                     beta_u = CI.beta[2,], beta_l = CI.beta[1, ])
+
+# plot the posterior mean and 95% CI of beta, along with the true parameters 
+g.beta = ggplot(df_beta, aes(x = x, y = beta)) +
+  geom_errorbar(aes(ymin=beta_l, ymax=beta_u), width=.15, color = "red3") +
+  geom_point(aes(color = type, shape = type)) +
+  scale_color_manual(values = c("red3", "black"))+
+  geom_abline(slope = 0, linetype = "dotted")+
+  xlab("") + ylab("") + themegg
+g.beta
+```
+
+Posterior estimates of the monotone link function :
+```{r, message = FALSE, warning = FALSE}
+# get the true link function at 100 equidistant grid points on [-1,1].
+grid.g = seq(-1, 1, length= 100)
+g.true = rep(0, length(grid.g))
+for(i in 1:length(grid.g))
+  g.true[i] = true.g(grid.g[i], a = const.g)
+
+# posterior mean of xi
+sam.xi = out$xi
+hat.xi = colMeans(sam.xi)
+
+# posterior estimates of link function
+sam.g = g.est(sam.xi, grid.g, u)
+hat.g = colMeans(sam.g)
+band.g = apply(sam.g, 2, quantile, probs=c(0.025,0.975))
+```
+
+Plot showing the true and estimated link function along with the $95 \%$ credible band :
+```{r, message = FALSE, warning = FALSE}
+# plot the posterior mean and 95% CI of estimated link function 
+df_g = data.frame(g = c(hat.g, g.true), type = rep(c("estimated", "true"), each = 100),
+                  x = grid.g, g_u = band.g[2,], g_l = band.g[1,])
+
+g.link = ggplot() + 
+  geom_line(df_g, mapping = aes(x=x, y = g_u), color = "red3", linetype = "dashed") + 
+  geom_line(df_g, mapping = aes(x=x, y = g_l), color = "red3", linetype = "dashed") + 
+  geom_ribbon(df_g, mapping = aes(x = x, ymin = g_l, ymax = g_u), fill = "grey90")+
+  geom_line(df_g, mapping = aes(x= x, y = g, color = type))+
+  scale_color_manual(values = c("red3", "black"))+
+  xlab("") + ylab("")+ themegg
+g.link
+```
