@@ -71,7 +71,7 @@ embedding techniques.
 - **LogLik.h** - Functions to evaluate the log-likelihood of the fitted
   models.
 
-- **RcppBasic.h** - Functions to basic vector and matrix operations in
+- **RcppBasic.h** - Functions for basic vector and matrix operations in
   Rcpp.
 
 ## Example
@@ -198,9 +198,12 @@ CI.beta = apply(sam.beta, 2, quantile, probs=c(0.025,0.975))
 ```
 
 Plot showing the true and estimated regression parameter along with the
-$95 \%$ credible intervals :
+$0.95$ credible intervals :
 
 ``` r
+# all plots follow a pre-specified theme stored in "themegg",
+# which can be found in the README.Rmd file.
+
 # data frame for plotting the posterior estimates of beta
 df_beta = data.frame(x = paste0("x", 1:p), beta = c(true.beta, hat.beta),
                      type = rep(c("true", "estimated"), each = p),
@@ -237,7 +240,7 @@ hat.g = colMeans(sam.g)
 band.g = apply(sam.g, 2, quantile, probs=c(0.025,0.975))
 ```
 
-Plot showing the true and estimated link function along with the $95 \%$
+Plot showing the true and estimated link function along with the $0.95$
 credible band :
 
 ``` r
