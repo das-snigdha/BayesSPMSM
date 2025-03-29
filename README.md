@@ -1,8 +1,11 @@
-A monotone single-index model for spatially-referenced multistate current status data
+A monotone single-index model for spatially-referenced multistate
+current status data
 ================
 
 Implementation of modeling framework proposed in the paper, Das, S.,
-Chae, M., Pati, D., and Bandyopadhyay, D. (2024+) “A monotone single-index model for spatially-referenced multistate current status data”.
+Chae, M., Pati, D., and Bandyopadhyay, D. (2024+) “A monotone
+single-index model for spatially-referenced multistate current status
+data”.
 
 ## Overview
 
@@ -36,10 +39,17 @@ embedding techniques.
   of parameters of our proposed model.
 
 - **SOP_TP.R** - Functions to calculate the state occupation probability
-  (SOP) and transition probability (TP) of the disease states over time.
-  The functions `get_sop` and `get_tp` generate the SOP and TP,
-  respectively, using posterior samples of parameters obtained from
-  `GP_MSM`.
+  (SOP) and transition probability (TP) of the disease states over time,
+  corresponding to a supplied choice of covariates. The function
+  `est_SOP_TP` generates the SOP and TP, using posterior samples of
+  parameters obtained from `GP_MSM`.
+
+- **SOP_TP_SI.R** - Functions to calculate the state occupation
+  probability (SOP) and transition probability (TP) of the disease
+  states over time, corresponding to a supplied single index score that
+  combining all covariates. The function `est_SOP_TP_SI` generates the
+  SOP and TP for a given single index, using posterior samples of
+  parameters obtained from `GP_MSM`.
 
 ## Additional Functions
 
@@ -212,7 +222,7 @@ g.beta = ggplot(df_beta, aes(x = x, y = beta)) +
   geom_point(aes(color = type, shape = type)) +
   scale_color_manual(values = c("red3", "black"))+
   geom_abline(slope = 0, linetype = "dotted")+
-  xlab("") + ylab("") + themegg
+  xlab("Covariates") + ylab("Estimated Regression Coefficients") + themegg
 g.beta
 ```
 
@@ -251,8 +261,117 @@ g.link = ggplot() +
   geom_ribbon(df_g, mapping = aes(x = x, ymin = g_l, ymax = g_u), fill = "grey90")+
   geom_line(df_g, mapping = aes(x= x, y = g, color = type))+
   scale_color_manual(values = c("red3", "black"))+
-  xlab("") + ylab("")+ themegg
+  xlab(expression(bold("Single Index, ") * italic(u))) +
+  ylab(expression(bold("Estimated Link, ") * italic(hat(g)(u)))) + themegg
 g.link
 ```
 
 ![](README_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+
+Heatmap of the estimated precision matrix the (spatial) tooth-level
+random effects shared between the upper and lower jaws :
+
+``` r
+m_jaw = m/2
+var1 = factor(1:m_jaw)
+var2 = factor(1:m_jaw, levels = m_jaw:1)
+df_prec = expand.grid(var1 = var1, var2 = var2)
+prec_mat = solve(out$hat_Sigma_b)
+df_prec$prec = c(prec_mat)
+
+s1 = floor(min(prec_mat))
+s2 = ceiling(max(prec_mat))
+
+g2 = ggplot(df_prec, aes(x = var1, y = var2)) + 
+  geom_tile(aes(fill = prec), color='white') + 
+  scale_fill_gradient2(low = "black", high = "red3", mid = "white",
+                       midpoint = 0 , 
+                       limit = c(s1, s2), 
+                       space = "Lab") +
+  themegg + xlab("Estimated Precision Matrix")  + ylab("") + coord_fixed()
+g2
+```
+
+![](README_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+
+Calculate the state occupation and transition probabilities for the
+first tooth in the upper and lower jaws of a subject with a
+user-supplied choice of covariates:
+
+``` r
+source("SOP_TP.R")
+
+# covariate values of the new subject with teeth in the upper and lower jaws (x3 = 0,1)
+x.new = expand.grid(x2 = 1, x3 = 0:1) 
+x.new = cbind(x1 = 0, x.new)
+x.new.scaled = scale.new.covariate(x.new = x.new, x.data = data_all$x.scaled,
+                                   wts = data_all$x.scaled.wts)
+
+# Number of Monte Carlo samples to calculate the probabilities
+M_mc = 5000
+#choosing the first tooth in each jaw
+tooth_num = c(1,1) 
+
+# time intervals over which the probabilities are calculated
+t0 = 5
+t_vec = seq(1, 20, length = 10)
+t_vec_tp = t0 + seq(1, 5, length = 10)
+
+# calculate the probabilties
+out.sop.tp = est_SOP_TP(M_mc = M_mc, out = out, x.new.scaled = x.new.scaled, 
+                        tooth_num = tooth_num, t0 = t0, t_vec = t_vec, t_vec_tp = t_vec_tp)
+```
+
+    ## [1] "k : 1"
+    ## [1] "k : 2"
+
+Plot the estimated state occupation probabilities, along with their
+$0.95$ credible bands :
+
+``` r
+# plot the state occupation probability
+n_time = length(t_vec) ; states = 0:K; n_state = length(states)
+cov = c("Lower Jaw", "Upper Jaw")
+n_cov = length(cov)
+df_SOP = data.frame(SOP = out.sop.tp$plot.SOP,
+                    CB.SOP.1 = out.sop.tp$CB.SOP.1,
+                    CB.SOP.2 = out.sop.tp$CB.SOP.2,
+                    State = rep(states, each = n_time, times = n_cov),
+                    cov = rep(cov, each = n_time*n_state),
+                    Time = rep(t_vec, times = n_state*n_cov))
+g.SOP = ggplot(df_SOP, aes(x = Time, y = SOP)) + 
+  geom_line(aes(color = cov), lwd = 1) +
+  geom_ribbon(aes(x = Time, ymin = CB.SOP.1, ymax = CB.SOP.2, fill = cov),
+              alpha = 0.3, color = NA) +
+  xlab("Time") + ylab("State Occupation Probability")+
+  facet_wrap(~State, scales = "free", nrow = 1) + themegg +
+  scale_fill_manual(values = c("red3", "grey10"), aesthetics = c("color", "fill"))
+g.SOP
+```
+
+![](README_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+
+Plot the estimated transition probabilities, along with their $0.95$
+credible bands :
+
+``` r
+# plot the transition probability
+trans = paste0(0:(K-1), "-", 1:K)
+n_trans = length(trans)
+df_TP = data.frame(TP = out.sop.tp$plot.TP,
+                   CB.TP.1 = out.sop.tp$CB.TP.1,
+                   CB.TP.2 = out.sop.tp$CB.TP.2,
+                   State = rep(trans, each = n_time, times = n_cov),
+                   cov = rep(cov, each = n_time*n_trans),
+                   Time = rep(t_vec_tp, times = n_trans*n_cov))
+g.TP = ggplot(df_TP, aes(x = Time, y = TP)) + ylab("TP")+
+  geom_line(aes(color = cov), lwd = 1) +
+  geom_ribbon(aes(x = Time, ymin = CB.TP.1, ymax = CB.TP.2, fill = cov),
+              alpha = 0.3, color = NA) +
+  xlab("Time") + ylab("Transition Probability")+
+  facet_wrap(~State, scales = "free") + themegg +
+  scale_fill_manual(values = c("grey10", "red3"), aesthetics = c("color", "fill"))
+g.TP
+```
+
+![](README_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->

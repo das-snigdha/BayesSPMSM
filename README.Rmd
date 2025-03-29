@@ -1,6 +1,7 @@
 ---
 title: "A monotone single-index model for spatially-referenced multistate current status data"
 output: 
+  pdf_document: default
   github_document: default
 ---
 
@@ -8,7 +9,7 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-Implementation of modeling framework proposed in the paper, Das, S., Chae, M., Pati, D., and Bandyopadhyay, D. (2024+) "A monotone single-index model for spatially-referenced multistate current status data".
+Implementation of modeling framework proposed in the paper, Das, S., Chae, M., Pati, D., Bandyopadhyay, D. (2024+) "A monotone single-index model for spatially-referenced multistate current status data".
 
 ## Overview
 
@@ -22,7 +23,9 @@ We propose a Bayesian semiparametric accelerated failure time model with (spatia
 
 -   **SPMSM.R** - Wrapper function in R to implement our proposed Bayesian modeling framework. The function `GP_MSM` performs posterior sampling of parameters of our proposed model.
 
--   **SOP_TP.R** - Functions to calculate the state occupation probability (SOP) and transition probability (TP) of the disease states over time. The functions `get_sop` and `get_tp` generate the SOP and TP, respectively, using posterior samples of parameters obtained from `GP_MSM`.
+-   **SOP_TP.R** - Functions to calculate the state occupation probability (SOP) and transition probability (TP) of the disease states over time, corresponding to a supplied choice of covariates. The function `est_SOP_TP` generates the SOP and TP, using posterior samples of parameters obtained from `GP_MSM`.
+
+-   **SOP_TP_SI.R** - Functions to calculate the state occupation probability (SOP) and transition probability (TP) of the disease states over time, corresponding to a supplied single index score that combining all covariates. The function `est_SOP_TP_SI` generates the SOP and TP for a given single index, using posterior samples of parameters obtained from `GP_MSM`.
 
 ## Additional Functions
 
@@ -39,6 +42,10 @@ We propose a Bayesian semiparametric accelerated failure time model with (spatia
 -   **LogLik.h** - Functions to evaluate the log-likelihood of the fitted models.
 
 -   **RcppBasic.h** - Functions for basic vector and matrix operations in Rcpp.
+
+## Additional Materials
+
+The **simulations** folder contains the code to reproduce the simulations results and generate the plots using MCMC output, as shown in the paper.
 
 ## Example
 
@@ -153,7 +160,8 @@ themegg = theme(
   axis.line.y = element_line(color="black", linewidth =  0.2),
   panel.border = element_rect(colour = "black", fill=NA, linewidth = 0.2),
   legend.text=element_text(size=12, face="bold", colour = "black"),
-  legend.title=element_blank()
+  legend.title=element_blank(),
+  legend.position = "top"
 )
 ```
 
@@ -169,7 +177,7 @@ CI.beta = apply(sam.beta, 2, quantile, probs=c(0.025,0.975))
 ```
 
 Plot showing the true and estimated regression parameter along with the $0.95$ credible intervals :
-```{r, message = FALSE, warning = FALSE}
+```{r, message = FALSE, warning = FALSE, fig1, fig.height = 4, fig.width = 6, fig.align = "center"}
 # all plots follow a pre-specified theme stored in "themegg",
 # which can be found in the README.Rmd file.
 
@@ -184,7 +192,7 @@ g.beta = ggplot(df_beta, aes(x = x, y = beta)) +
   geom_point(aes(color = type, shape = type)) +
   scale_color_manual(values = c("red3", "black"))+
   geom_abline(slope = 0, linetype = "dotted")+
-  xlab("") + ylab("") + themegg
+  xlab("Covariates") + ylab("Estimated\nRegression Coefficients") + themegg
 g.beta
 ```
 
@@ -207,7 +215,7 @@ band.g = apply(sam.g, 2, quantile, probs=c(0.025,0.975))
 ```
 
 Plot showing the true and estimated link function along with the $0.95$ credible band :
-```{r, message = FALSE, warning = FALSE}
+```{r, message = FALSE, warning = FALSE, fig2, fig.height = 4, fig.width = 6, fig.align = "center"}
 # plot the posterior mean and 95% CI of estimated link function 
 df_g = data.frame(g = c(hat.g, g.true), type = rep(c("estimated", "true"), each = 100),
                   x = grid.g, g_u = band.g[2,], g_l = band.g[1,])
@@ -218,6 +226,99 @@ g.link = ggplot() +
   geom_ribbon(df_g, mapping = aes(x = x, ymin = g_l, ymax = g_u), fill = "grey90")+
   geom_line(df_g, mapping = aes(x= x, y = g, color = type))+
   scale_color_manual(values = c("red3", "black"))+
-  xlab("") + ylab("")+ themegg
+  xlab(expression(bold("Single Index, ") * italic(u))) +
+  ylab(expression(bold("Estimated Link, ") * italic(hat(g)(u)))) + themegg
 g.link
+```
+
+Heatmap of the estimated precision matrix the (spatial) tooth-level random effects shared between the upper and lower jaws :
+```{r, message = FALSE, warning = FALSE, fig3, fig.height = 4, fig.width = 4, fig.align = "center"}
+m_jaw = m/2
+var1 = factor(1:m_jaw)
+var2 = factor(1:m_jaw, levels = m_jaw:1)
+df_prec = expand.grid(var1 = var1, var2 = var2)
+prec_mat = solve(out$hat_Sigma_b)
+df_prec$prec = c(prec_mat)
+
+s1 = floor(min(prec_mat))
+s2 = ceiling(max(prec_mat))
+
+g2 = ggplot(df_prec, aes(x = var1, y = var2)) + 
+  geom_tile(aes(fill = prec), color='white') + 
+  scale_fill_gradient2(low = "black", high = "red3", mid = "white",
+                       midpoint = 0 , 
+                       limit = c(s1, s2), 
+                       space = "Lab") +
+  themegg + xlab("Estimated Precision Matrix")  + ylab("") + coord_fixed()
+g2
+```
+
+Calculate the state occupation and transition probabilities for the first tooth in the upper and lower jaws of a subject with a user-supplied choice of covariates:
+```{r, message = FALSE, warning = FALSE, results='hide'}
+source("SOP_TP.R")
+
+# covariate values of the new subject with teeth in the upper and lower jaws (x3 = 0,1)
+x.new = expand.grid(x2 = 1, x3 = 0:1) 
+x.new = cbind(x1 = 0, x.new)
+x.new.scaled = scale.new.covariate(x.new = x.new, x.data = data_all$x.scaled,
+                                   wts = data_all$x.scaled.wts)
+
+# Number of Monte Carlo samples to calculate the probabilities
+M_mc = 5000
+#choosing the first tooth in each jaw
+tooth_num = c(1,1) 
+
+# time intervals over which the probabilities are calculated
+t0 = 5
+t_vec = seq(1, 20, length = 10)
+t_vec_tp = t0 + seq(1, 5, length = 10)
+
+# calculate the probabilties
+out.sop.tp = est_SOP_TP(M_mc = M_mc, out = out, x.new.scaled = x.new.scaled, 
+                        tooth_num = tooth_num, t0 = t0, 
+                        t_vec = t_vec, t_vec_tp = t_vec_tp)
+
+```
+
+Plot the estimated state occupation probabilities, along with their $0.95$ credible bands :
+```{r, message = FALSE, warning = FALSE, fig5, fig.align = "center"}
+# plot the state occupation probability
+n_time = length(t_vec) ; states = 0:K; n_state = length(states)
+cov = c("Lower Jaw", "Upper Jaw")
+n_cov = length(cov)
+df_SOP = data.frame(SOP = out.sop.tp$plot.SOP,
+                    CB.SOP.1 = out.sop.tp$CB.SOP.1,
+                    CB.SOP.2 = out.sop.tp$CB.SOP.2,
+                    State = rep(states, each = n_time, times = n_cov),
+                    cov = rep(cov, each = n_time*n_state),
+                    Time = rep(t_vec, times = n_state*n_cov))
+g.SOP = ggplot(df_SOP, aes(x = Time, y = SOP)) + 
+  geom_line(aes(color = cov), lwd = 1) +
+  geom_ribbon(aes(x = Time, ymin = CB.SOP.1, ymax = CB.SOP.2, fill = cov),
+              alpha = 0.3, color = NA) +
+  xlab("Time") + ylab("State Occupation Probability")+
+  facet_wrap(~State, scales = "free", nrow = 1) + themegg +
+  scale_fill_manual(values = c("red3", "grey10"), aesthetics = c("color", "fill"))
+g.SOP
+```
+
+Plot the estimated transition probabilities, along with their $0.95$ credible bands :
+```{r, message = FALSE, warning = FALSE, fig6, fig.align = "center"}
+# plot the transition probability
+trans = paste0(0:(K-1), "-", 1:K)
+n_trans = length(trans)
+df_TP = data.frame(TP = out.sop.tp$plot.TP,
+                   CB.TP.1 = out.sop.tp$CB.TP.1,
+                   CB.TP.2 = out.sop.tp$CB.TP.2,
+                   State = rep(trans, each = n_time, times = n_cov),
+                   cov = rep(cov, each = n_time*n_trans),
+                   Time = rep(t_vec_tp, times = n_trans*n_cov))
+g.TP = ggplot(df_TP, aes(x = Time, y = TP)) + ylab("TP")+
+  geom_line(aes(color = cov), lwd = 1) +
+  geom_ribbon(aes(x = Time, ymin = CB.TP.1, ymax = CB.TP.2, fill = cov),
+              alpha = 0.3, color = NA) +
+  xlab("Time") + ylab("Transition Probability")+
+  facet_wrap(~State, scales = "free") + themegg +
+  scale_fill_manual(values = c("grey10", "red3"), aesthetics = c("color", "fill"))
+g.TP
 ```
