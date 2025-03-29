@@ -1,24 +1,22 @@
 library(gtools); library(Rcpp)
-sourceCpp("CS.cpp")
+sourceCpp("SPMSM.cpp")
 
-gSI_beta = function(xi, x, Beta){
+gSI = function(xi, x){
   
   L = length(xi) - 1;
   u = seq(-1, 1, length=L+1)
   
-  xb = sum(x*Beta)
-  
-  res = g(x = xb, xi = xi, u = u)
+  res = g(x = x, xi = xi, u = u)
   return(res)
   
 }
 
-get_sop = function(j, x, State, n_MC, t_vec, alpha, mm, ss, Pi, Sigma_b, xi, Beta){
+get_sop_SI = function(j, x, State, n_MC, t_vec, alpha, mm, ss, Pi, Sigma_b, xi){
   
   L = length(mm); K = length(alpha); 
   
   s_b = c(Sigma_b, rev(Sigma_b))[j]
-  g_x = gSI_beta(xi = xi, x = x, Beta = Beta)
+  g_x = gSI(xi = xi, x = x)
   
   Z = sample(L, n_MC, TRUE, Pi)
   m_vec = mm[Z]; s_vec = ss[Z]
@@ -47,12 +45,12 @@ get_sop = function(j, x, State, n_MC, t_vec, alpha, mm, ss, Pi, Sigma_b, xi, Bet
 }
 
 
-get_tp = function(j, x, State, n_MC, t0, t_vec, alpha, mm, ss, Pi, Sigma_b, xi, Beta){
+get_tp_SI = function(j, x, State, n_MC, t0, t_vec, alpha, mm, ss, Pi, Sigma_b, xi){
   
   L = length(mm); K = length(alpha); 
   
   s_b = rep(c(Sigma_b, rev(Sigma_b)))[j]
-  g_x = gSI_beta(xi = xi, x = x, Beta = Beta)
+  g_x = gSI(xi = xi, x = x)
   
   Z = sample(L, n_MC, TRUE, Pi)
   m_vec = mm[Z]; s_vec = ss[Z]
@@ -90,5 +88,3 @@ get_tp = function(j, x, State, n_MC, t0, t_vec, alpha, mm, ss, Pi, Sigma_b, xi, 
   return(res)
   
 }
-
-
