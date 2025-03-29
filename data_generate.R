@@ -99,7 +99,8 @@ data_misspecification = function(n=100, m=10, p=4, snr = 5, nu = 3, error.percen
     tmp[j,j+1] = tmp[j+1,j] = -0.9
   true.Sigma.b = solve(tmp)/100
   
-  tmp = cbind(1:n, matrix(rnorm(p1*n), ncol = p1), matrix(rbinom(p2*n, 1, 0.5), ncol=p2))
+  tmp = cbind(1:n, matrix(runif(p1*n, min = -5, max = 5), ncol = p1), 
+              matrix(rbinom(p2*n, 1, 0.5), ncol=p2))
   obs.full = cbind(tmp, 1)
   for(i in 2:m)
     obs.full = rbind(obs.full, cbind(tmp, i))
