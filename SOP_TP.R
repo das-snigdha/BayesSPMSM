@@ -1,5 +1,5 @@
 library(gtools); library(Rcpp)
-sourceCpp("CS.cpp")
+sourceCpp("SPMSM.cpp")
 
 gSI_beta = function(xi, x, Beta){
   
