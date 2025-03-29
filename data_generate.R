@@ -33,6 +33,7 @@ data_model = function(n=100, m=14, p=3, snr = 5, mu_eps = c(-0.5, 0, 0.5),
   tmp = max(sqrt(rowSums(x.scaled*x.scaled)))
   x.scaled = x.scaled / tmp
   obs.full[, xnames] = x.scaled
+  x.scaled.wts = tmp
   
   # b
   tmp = mvrnorm(n, rep(0,m/2), true.Sigma.b)
@@ -84,7 +85,8 @@ data_model = function(n=100, m=14, p=3, snr = 5, mu_eps = c(-0.5, 0, 0.5),
   obs.full[ind2, "State"] = 2
   obs.full[ind3, "State"] = 3
   
-  return(list(obs.full = obs.full, const.g = const.g))
+  return(list(obs.full = obs.full, const.g = const.g,
+              x.scaled = x.scaled, x.scaled.wts = x.scaled.wts))
   
 }
 
@@ -123,6 +125,7 @@ data_misspecification = function(n=100, m=10, p=4, snr = 5, nu = 3, error.percen
   tmp = max(sqrt(rowSums(x.scaled*x.scaled)))
   x.scaled = x.scaled / tmp
   obs.full[, xnames] = x.scaled
+  x.scaled.wts = tmp
   
   ## b
   tmp = mvrnorm(n, rep(0,m/2), true.Sigma.b)
@@ -176,6 +179,7 @@ data_misspecification = function(n=100, m=10, p=4, snr = 5, nu = 3, error.percen
   obs.full[ind2, "State"] = 2
   obs.full[ind3, "State"] = 3
   
-  return(list(obs.full = obs.full, const.g = const.g))
+  return(list(obs.full = obs.full, const.g = const.g,
+              x.scaled = x.scaled, x.scaled.wts = x.scaled.wts))
   
 }
