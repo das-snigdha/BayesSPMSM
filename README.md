@@ -3,9 +3,8 @@ current status data
 ================
 
 Implementation of modeling framework proposed in the paper, Das, S.,
-Chae, M., Pati, D., and Bandyopadhyay, D. (2024+) “A monotone
-single-index model for spatially-referenced multistate current status
-data”.
+Chae, M., Pati, D., Bandyopadhyay, D. (2024+) “A monotone single-index
+model for spatially-referenced multistate current status data”.
 
 ## Overview
 
@@ -80,6 +79,12 @@ embedding techniques.
 
 - **RcppBasic.h** - Functions for basic vector and matrix operations in
   Rcpp.
+
+## Additional Materials
+
+The **simulations** folder contains the code to reproduce the
+simulations results and generate the plots using MCMC output, as shown
+in the paper.
 
 ## Example
 
@@ -205,7 +210,7 @@ CI.beta = apply(sam.beta, 2, quantile, probs=c(0.025,0.975))
 ```
 
 Plot showing the true and estimated regression parameter along with the
-$0.95$ credible intervals :
+$95$% credible intervals :
 
 ``` r
 # all plots follow a pre-specified theme stored in "themegg",
@@ -222,11 +227,11 @@ g.beta = ggplot(df_beta, aes(x = x, y = beta)) +
   geom_point(aes(color = type, shape = type)) +
   scale_color_manual(values = c("red3", "black"))+
   geom_abline(slope = 0, linetype = "dotted")+
-  xlab("Covariates") + ylab("Estimated Regression Coefficients") + themegg
+  xlab("Covariates") + ylab("Regression Coefficients") + themegg
 g.beta
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
+<img src="README_files/figure-gfm/fig1-1.png" style="display: block; margin: auto;" />
 
 Posterior estimates of the monotone link function :
 
@@ -247,7 +252,7 @@ hat.g = colMeans(sam.g)
 band.g = apply(sam.g, 2, quantile, probs=c(0.025,0.975))
 ```
 
-Plot showing the true and estimated link function along with the $0.95$
+Plot showing the true and estimated link function along with the $95$%
 credible band :
 
 ``` r
@@ -261,12 +266,12 @@ g.link = ggplot() +
   geom_ribbon(df_g, mapping = aes(x = x, ymin = g_l, ymax = g_u), fill = "grey90")+
   geom_line(df_g, mapping = aes(x= x, y = g, color = type))+
   scale_color_manual(values = c("red3", "black"))+
-  xlab(expression(bold("Single Index, ") * italic(u))) +
-  ylab(expression(bold("Estimated Link, ") * italic(hat(g)(u)))) + themegg
+  xlab("Single index") +
+  ylab("Link function") + themegg
 g.link
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+<img src="README_files/figure-gfm/fig2-1.png" style="display: block; margin: auto;" />
 
 Heatmap of the estimated precision matrix the (spatial) tooth-level
 random effects shared between the upper and lower jaws :
@@ -292,7 +297,7 @@ g2 = ggplot(df_prec, aes(x = var1, y = var2)) +
 g2
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+<img src="README_files/figure-gfm/fig3-1.png" style="display: block; margin: auto;" />
 
 Calculate the state occupation and transition probabilities for the
 first tooth in the upper and lower jaws of a subject with a
@@ -319,14 +324,12 @@ t_vec_tp = t0 + seq(1, 5, length = 10)
 
 # calculate the probabilties
 out.sop.tp = est_SOP_TP(M_mc = M_mc, out = out, x.new.scaled = x.new.scaled, 
-                        tooth_num = tooth_num, t0 = t0, t_vec = t_vec, t_vec_tp = t_vec_tp)
+                        tooth_num = tooth_num, t0 = t0, 
+                        t_vec = t_vec, t_vec_tp = t_vec_tp)
 ```
 
-    ## [1] "k : 1"
-    ## [1] "k : 2"
-
 Plot the estimated state occupation probabilities, along with their
-$0.95$ credible bands :
+$95$% credible bands :
 
 ``` r
 # plot the state occupation probability
@@ -349,9 +352,9 @@ g.SOP = ggplot(df_SOP, aes(x = Time, y = SOP)) +
 g.SOP
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+<img src="README_files/figure-gfm/fig5-1.png" style="display: block; margin: auto;" />
 
-Plot the estimated transition probabilities, along with their $0.95$
+Plot the estimated transition probabilities, along with their $95$%
 credible bands :
 
 ``` r
@@ -374,4 +377,4 @@ g.TP = ggplot(df_TP, aes(x = Time, y = TP)) + ylab("TP")+
 g.TP
 ```
 
-![](README_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
+<img src="README_files/figure-gfm/fig6-1.png" style="display: block; margin: auto;" />

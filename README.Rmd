@@ -1,8 +1,8 @@
 ---
 title: "A monotone single-index model for spatially-referenced multistate current status data"
 output: 
-  pdf_document: default
   github_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -176,7 +176,7 @@ hat.beta = hat.beta / norm(hat.beta, "2")
 CI.beta = apply(sam.beta, 2, quantile, probs=c(0.025,0.975))
 ```
 
-Plot showing the true and estimated regression parameter along with the $0.95$ credible intervals :
+Plot showing the true and estimated regression parameter along with the  $95$\% credible intervals :
 ```{r, message = FALSE, warning = FALSE, fig1, fig.height = 3, fig.width = 5, fig.align = "center"}
 # all plots follow a pre-specified theme stored in "themegg",
 # which can be found in the README.Rmd file.
@@ -214,7 +214,7 @@ hat.g = colMeans(sam.g)
 band.g = apply(sam.g, 2, quantile, probs=c(0.025,0.975))
 ```
 
-Plot showing the true and estimated link function along with the $0.95$ credible band :
+Plot showing the true and estimated link function along with the  $95$\% credible band :
 ```{r, message = FALSE, warning = FALSE, fig2, fig.height = 3, fig.width = 5, fig.align = "center"}
 # plot the posterior mean and 95% CI of estimated link function 
 df_g = data.frame(g = c(hat.g, g.true), type = rep(c("estimated", "true"), each = 100),
@@ -280,8 +280,8 @@ out.sop.tp = est_SOP_TP(M_mc = M_mc, out = out, x.new.scaled = x.new.scaled,
 
 ```
 
-Plot the estimated state occupation probabilities, along with their $0.95$ credible bands :
-```{r, message = FALSE, warning = FALSE, fig5, fig.align = "center"}
+Plot the estimated state occupation probabilities, along with their $95$\% credible bands :
+```{r, message = FALSE, warning = FALSE, fig5, fig.align = "center", fig.height = 3, fig.width = 5}
 # plot the state occupation probability
 n_time = length(t_vec) ; states = 0:K; n_state = length(states)
 cov = c("Lower Jaw", "Upper Jaw")
@@ -302,8 +302,8 @@ g.SOP = ggplot(df_SOP, aes(x = Time, y = SOP)) +
 g.SOP
 ```
 
-Plot the estimated transition probabilities, along with their $0.95$ credible bands :
-```{r, message = FALSE, warning = FALSE, fig6, fig.align = "center"}
+Plot the estimated transition probabilities, along with their $95$\% credible bands :
+```{r, message = FALSE, warning = FALSE, fig6, fig.align = "center", fig.height = 3, fig.width = 5}
 # plot the transition probability
 trans = paste0(0:(K-1), "-", 1:K)
 n_trans = length(trans)
