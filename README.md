@@ -82,9 +82,12 @@ embedding techniques.
 
 ## Additional Materials
 
-The **simulations** folder contains the code to reproduce the
-simulations results and generate the plots using MCMC output, as shown
-in the paper.
+- The **data** folder contains the motivating GAAD data set used in the
+  application section of the paper.
+
+- The **simulations** folder contains the code to reproduce the
+  simulations results and generate the plots using MCMC output, as shown
+  in the paper.
 
 ## Example
 
@@ -156,8 +159,7 @@ Specify hyperparameters :
 ``` r
 # Coefficients of the constrained GP basis functions. 
 # We use 30 basis functions on equidistant knot points in [-1,1] for illustration.
-L = 30 ; u = seq(-1, 1, length = L+1)
-a.xi = 0.01 ; b.xi = 0.01 ; eta.xi = 100 ;
+L = 30 ; u = seq(-1, 1, length = L+1) ; a.xi = 0.01 ; b.xi = 0.01 ; eta.xi = 100 ;
 # smoothness and length-scale parameters of the Matern covariance Kernel
 nu.matern = 0.75 ; l.matern = l_est(nu.matern, c(u[1], u[length(u)]), 0.05)
 
@@ -318,8 +320,7 @@ M_mc = 5000
 tooth_num = c(1,1) 
 
 # time intervals over which the probabilities are calculated
-t0 = 5
-t_vec = seq(1, 20, length = 10)
+t0 = 5; t_vec = seq(1, 20, length = 10)
 t_vec_tp = t0 + seq(1, 5, length = 10)
 
 # calculate the probabilties
