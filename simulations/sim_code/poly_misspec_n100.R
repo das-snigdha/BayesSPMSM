@@ -107,7 +107,7 @@ out = foreach::foreach(r = 1:nReplicate, .combine = 'mycombine', .multicombine =
                 a_xi = 0.01, b_xi = 0.01, sigma_sq_beta = 100,  
                 alpha_a = 1, alpha_lambda = 0.1, alpha_stepsize = 0.08,
                 f_mu = 0, f_nu = 1, f_lambda = 0.1, f_alpha = 2.001,
-                Lmax = 5, M_mcmc = M, M_burn = M_burn, thin = M_thin) 
+                Lmax = 10, M_mcmc = M, M_burn = M_burn, thin = M_thin) 
   
   resBP = BP_MSM_c(id = obs.full[,"id"], tooth = obs.full[,"tooth"], C  = obs.full[,"C"], 
                      State = obs.full[,"State"], X = obs.full[, xnames], 
@@ -117,7 +117,7 @@ out = foreach::foreach(r = 1:nReplicate, .combine = 'mycombine', .multicombine =
                      sigma_sq_beta = 100, a_psi = 0.01, b_psi = 0.01, 
                      alpha_a = 1, alpha_lambda = 0.1, alpha_stepsize = 0.08,
                      f_mu = 0, f_nu = 1, f_lambda = 0.1, f_alpha = 2.001, 
-                     Lmax = 5, M_mcmc = M, M_burn = M_burn, thin = M_thin) 
+                     Lmax = 10, M_mcmc = M, M_burn = M_burn, thin = M_thin) 
   
   res_norm = GP_MSM_c(id = obs.full[,"id"], tooth = obs.full[,"tooth"], C  = obs.full[,"C"], 
                      State = obs.full[,"State"], X = obs.full[, xnames], 
